@@ -1,7 +1,6 @@
-
 import express from 'express';
 import bodyParser from 'body-parser';
-import { MessagingResponse } from 'twilio';
+import twilio from 'twilio';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
@@ -44,6 +43,7 @@ app.post('/whatsapp', async (req, res) => {
 
         const botResponse = cohereData.generations[0].text.trim();
 
+        const { MessagingResponse } = twilio;
         const twiml = new MessagingResponse();
         twiml.message(botResponse || "Desculpe, não entendi o que você quis dizer.");
 
@@ -51,6 +51,7 @@ app.post('/whatsapp', async (req, res) => {
         res.end(twiml.toString());
     } catch (error) {
         console.error('Erro ao chamar a API da Cohere:', error);
+        const { MessagingResponse } = twilio;
         const twiml = new MessagingResponse();
         twiml.message("Ocorreu um erro ao tentar processar sua mensagem. Tente novamente mais tarde.");
 
