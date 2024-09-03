@@ -1,20 +1,17 @@
 import express from 'express';
-import bodyParser from 'body-parser';
-import pkg from 'twilio';
 import fetch from 'node-fetch';
-import dotenv from 'dotenv';
+import 'dotenv/config';  // Carrega variáveis de ambiente do arquivo .env
+import twilio from 'twilio';
 
-dotenv.config();
-
-const { MessagingResponse } = pkg.twiml;
 const app = express();
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false }));
 
 const apiKey = process.env.COHERE_API_KEY;
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const whatsappNumber = process.env.TWILIO_WHATSAPP_NUMBER;
 
 app.post('/whatsapp', async (req, res) => {
-    console.log('Requisição recebida:', req.body); // Log da requisição recebida
-
     const incomingMessage = req.body.Body;
     const from = req.body.From;
 
@@ -39,7 +36,7 @@ app.post('/whatsapp', async (req, res) => {
         }
 
         const cohereData = await cohereResponse.json();
-        console.log('Resposta da API da Cohere:', cohereData); // Log da resposta da API
+        console.log('Resposta da API da Cohere:', cohereData);
 
         if (!cohereData || !cohereData.generations || !cohereData.generations.length) {
             throw new Error('Nenhuma resposta válida recebida da API da Cohere.');
@@ -47,14 +44,15 @@ app.post('/whatsapp', async (req, res) => {
 
         const botResponse = cohereData.generations[0].text.trim();
 
-        const twiml = new MessagingResponse();
+        // Instancia MessagingResponse da forma correta
+        const twiml = new twilio.twiml.MessagingResponse();
         twiml.message(botResponse || "Desculpe, não entendi o que você quis dizer.");
 
         res.writeHead(200, { 'Content-Type': 'text/xml' });
         res.end(twiml.toString());
     } catch (error) {
-        console.error('Erro ao chamar a API da Cohere:', error); // Log de erro
-        const twiml = new MessagingResponse();
+        console.error('Erro ao chamar a API da Cohere:', error);
+        const twiml = new twilio.twiml.MessagingResponse();
         twiml.message("Ocorreu um erro ao tentar processar sua mensagem. Tente novamente mais tarde.");
 
         res.writeHead(200, { 'Content-Type': 'text/xml' });
@@ -62,7 +60,6 @@ app.post('/whatsapp', async (req, res) => {
     }
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`); // Log de inicialização do servidor
+app.listen(3000, () => {
+    console.log('Servidor rodando na porta 3000');
 });
