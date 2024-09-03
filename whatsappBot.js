@@ -1,17 +1,20 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import twilio from 'twilio';
+import pkg from 'twilio';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+const { MessagingResponse } = pkg.twiml;
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
 
 const apiKey = process.env.COHERE_API_KEY;
 
 app.post('/whatsapp', async (req, res) => {
+    console.log('Requisição recebida:', req.body); // Log da requisição recebida
+
     const incomingMessage = req.body.Body;
     const from = req.body.From;
 
@@ -36,6 +39,7 @@ app.post('/whatsapp', async (req, res) => {
         }
 
         const cohereData = await cohereResponse.json();
+        console.log('Resposta da API da Cohere:', cohereData); // Log da resposta da API
 
         if (!cohereData || !cohereData.generations || !cohereData.generations.length) {
             throw new Error('Nenhuma resposta válida recebida da API da Cohere.');
@@ -43,15 +47,13 @@ app.post('/whatsapp', async (req, res) => {
 
         const botResponse = cohereData.generations[0].text.trim();
 
-        const { MessagingResponse } = twilio;
         const twiml = new MessagingResponse();
         twiml.message(botResponse || "Desculpe, não entendi o que você quis dizer.");
 
         res.writeHead(200, { 'Content-Type': 'text/xml' });
         res.end(twiml.toString());
     } catch (error) {
-        console.error('Erro ao chamar a API da Cohere:', error);
-        const { MessagingResponse } = twilio;
+        console.error('Erro ao chamar a API da Cohere:', error); // Log de erro
         const twiml = new MessagingResponse();
         twiml.message("Ocorreu um erro ao tentar processar sua mensagem. Tente novamente mais tarde.");
 
@@ -62,5 +64,5 @@ app.post('/whatsapp', async (req, res) => {
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-    console.log(`Servidor rodando na porta ${port}`);
+    console.log(`Servidor rodando na porta ${port}`); // Log de inicialização do servidor
 });
